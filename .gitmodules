@@ -1,0 +1,3 @@
+[submodule "wallaroo-src"]
+	path = wallaroo-src
+	url = https://github.com/WallarooLabs/wallaroo.git
