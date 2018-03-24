@@ -27,7 +27,7 @@ import struct
 
 import wallaroo
 
-from wallaby import *
+from wallaby import T, pipeline, pipe, Source, Sink
 
 @wallaroo.decoder(header_length=4, length_fmt=">I")
 def decoder(bs):
@@ -43,17 +43,23 @@ def reverse(data):
     return data[::-1]
 
 @pipeline
+def make_reverse_pipeline( source, sink ):
+    return source >> reverse >> sink
+
 def application_setup(args):
     in_host, in_port = wallaroo.tcp_parse_input_addrs(args)[0]
     out_host, out_port = wallaroo.tcp_parse_output_addrs(args)[0]
 
     ab = wallaroo.ApplicationBuilder("Reverse Word")
-    ab.new_pipeline("reverse",
-                    wallaroo.TCPSourceConfig(in_host, in_port, decoder))
-    ab.to(reverse)
-    ab.to_sink(wallaroo.TCPSinkConfig(out_host, out_port, encoder))
-    return ab.build()
 
+    # Setup wallaroo application
+    source_config = wallaroo.TCPSourceConfig(in_host, in_port, decoder)
+    sink_config = wallaroo.TCPSinkConfig(out_host, out_port, encoder))
+
+    reverse_pipeline = make_reverse_pipeline( Source( source_config ), Sink( sink_config ))
+    reverse_pipeline.init( ab )
+
+    return ab.build()
 
 ```
 
@@ -64,6 +70,10 @@ _P.S. For corresponding `wallaroo` example, see:_
 
 *****
 
+FAQs
+----
+
+
 API Reference
 -------------
 
@@ -72,6 +82,6 @@ API Reference
 Thanks
 ------
 
- - hask
- - python-effect
- - wallaroo
+ - [hask](https://github.com/billpmurphy/hask/blob/master/README.md)
+ - [python-effect](https://github.com/python-effect/effect)
+ - [wallaroo](https://docs.wallaroolabs.com/book/python/api.html#wallarooapplicationbuilder)
