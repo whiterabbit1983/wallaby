@@ -14,6 +14,55 @@ Under the hood, it uses type constraints and compile-time reflection to make the
  - Detect when a state change actually happened to optimize state persistence.
  - Provide robust, declarative error handling.
 
+Notes on Type System
+--------------------
+
+```python
+
+# Type Constructor
+# T :: <Type constructor>
+
+# Aliases
+T.int = T[int]
+T.str = T[str]
+
+# Error encapsulation
+maybe_int = T.Maybe[int]
+either_int_or_error = T.Either[int, Exception]
+
+# State encapsulation
+stateful_int_and_history = T.State[int, T.list[int]]
+
+# Pipe
+pipeA = P[ T.int >= T.bool ]
+pipeB = P[ T.bool >= T.str ]
+
+# Composition
+# >> :: pipe[A >= B] >= pipe[B >= C] >= pipe[A >= C]
+pipeC = pipeA >> pipeB
+
+# << :: pipe[B >= C] >= pipe[A >= B] >= pipe[A >= C]
+pipeC = pipeB << pipeA
+
+# invalid composition
+pipeD = pipeB >> pipeA  # Will raise error
+
+# Either compose
+# | :: P[ A >= B ] >= P[ C >= D ] >= P[ Either[A, B] >= Either[C, D] ]
+pipeE = P[ T.int >= T.bool ] | P[ T.str >= T.str ]
+pipeE == P[ T.Either[int, str] >= T.Either[bool, str] ]
+
+# Coerced composition
+# >> :: pipe[A >= Maybe[B]] >= pipe[B >= C] >= pipe[A >= Maybe[C]]
+# >> :: pipe[A >= Either[B, D]] >= ( pipe[B >= C] | pipe[D >= E] ) >= pipe[A >= Either[C, E]]
+
+# State composition
+# WIP
+
+# State partitioning
+# WIP
+```
+
 Examples
 --------
 
@@ -21,6 +70,8 @@ The following examples reflect how corresponding [official `wallaroo` examples](
 could be written using `wallaby`.
 
 **A Stateless Application - Reverse Words**
+
+_Work in progress_
 
 ```python
 import struct
