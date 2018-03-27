@@ -34,8 +34,8 @@ either_int_or_error = T.Either[int, Exception]
 stateful_int_and_history = T.State[int, T.list[int]]
 
 # Pipe
-pipeA = P[ T.int >= T.bool ]
-pipeB = P[ T.bool >= T.str ]
+pipeA = P[ T.int >> T.bool ]
+pipeB = P[ T.bool >> T.str ]
 
 # Composition
 # >> :: pipe[A >= B] >= pipe[B >= C] >= pipe[A >= C]
@@ -49,12 +49,12 @@ pipeD = pipeB >> pipeA  # Will raise error
 
 # Either compose
 # | :: P[ A >= B ] >= P[ C >= D ] >= P[ Either[A, B] >= Either[C, D] ]
-pipeE = P[ T.int >= T.bool ] | P[ T.str >= T.str ]
-pipeE == P[ T.Either[int, str] >= T.Either[bool, str] ]
+pipeE = P[ T.int >> T.bool ] | P[ T.str >> T.str ]
+pipeE == P[ T.Either[int, str] >> T.Either[bool, str] ]
 
 # Coerced composition
-# >> :: pipe[A >= Maybe[B]] >= pipe[B >= C] >= pipe[A >= Maybe[C]]
-# >> :: pipe[A >= Either[B, D]] >= ( pipe[B >= C] | pipe[D >= E] ) >= pipe[A >= Either[C, E]]
+# >> :: pipe[A >> Maybe[B]] >> pipe[B >> C] >> pipe[A >> Maybe[C]]
+# >> :: pipe[A >> Either[B, D]] >> ( pipe[B >> C] | pipe[D >> E] ) >> pipe[A >> Either[C, E]]
 
 # State composition
 # WIP
@@ -108,6 +108,8 @@ def application_setup(args):
     sink_config = wallaroo.TCPSinkConfig(out_host, out_port, encoder))
 
     reverse_pipeline = make_reverse_pipeline( Source( source_config ), Sink( sink_config ))
+    # the following expression can be used as an option, no need to implement pipeline decorator
+    # reverse_pipeline = Source(source_config, 'reversed pipeline') >> reverse >> Sink(sink_config)
     reverse_pipeline.init( ab )
 
     return ab.build()
