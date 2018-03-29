@@ -273,7 +273,6 @@ class TestComputation(unittest.TestCase):
         with self.assertRaises(TypeError):
             pipeline = add >> reverse
 
-    @unittest.expectedFailure
     def test_stateful_partitioned(self):
         ab = mock.Mock()
         ab.to_state_partition = mock.Mock()
@@ -307,7 +306,7 @@ class TestComputation(unittest.TestCase):
             mock.call(reverse.comp, MyState, 'reverse', partition, part_keys)
         ])
         ab.to_stateful.assert_has_calls([
-            mock.call(reverse.comp, MyState, 'add')
+            mock.call(add.comp, MyState, 'add')
         ])
         with self.assertRaises(TypeError):
             pipeline = add >> reverse

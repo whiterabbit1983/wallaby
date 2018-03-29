@@ -39,12 +39,19 @@ class Chain(object):
 
 class TypeWrapper(Chain):
     def __init__(self, t, stateful=False):
-        super(TypeWrapper, self).__init__(t)
+        partitioned = isinstance(t, tuple) and [x for x in t if x != str and callable(x) and hasattr(x, 'partition')]
+        super(TypeWrapper, self).__init__(t[0] if partitioned else t)
+        self.partition = None
         self.state = t if stateful else None
+        if partitioned:
+            self.state = t[0]
+            self.partition = t[1:]
 
     def _bind(self, w):
         if self.state is None:
             self.state = w.state
+        if self.partition is None:
+            self.partition = w.partition
         return super(TypeWrapper, self)._bind(w)
 
     def __getitem__(self, n):
@@ -56,8 +63,8 @@ class TypeWrapper(Chain):
 
 
 class Pipeline(Chain):
-    def __init__(self, comp, in_type, out_type, comp_name, state=None):
-        super(Pipeline, self).__init__(partial(self._executor, comp, state))
+    def __init__(self, comp, in_type, out_type, comp_name, state=None, partition=None):
+        super(Pipeline, self).__init__(partial(self._executor, comp, state, partition))
         self.in_type = in_type
         self.out_type = out_type
         self.comp = comp
@@ -67,9 +74,12 @@ class Pipeline(Chain):
     def __call__(self, *args, **kwargs):
         return self.comp(*args, **kwargs)
 
-    def _executor(self, comp, state, ab):
+    def _executor(self, comp, state, partition, ab):
         if state:
-            ab.to_stateful(comp, state, comp.__name__)
+            if partition:
+                ab.to_state_partition(comp, state, comp.__name__, *partition)
+            else:
+                ab.to_stateful(comp, state, comp.__name__)
         else:
             ab.to(comp)
 
@@ -130,7 +140,10 @@ def computation(type_sig):
     """
     def _decor(func):
         func = wraps(func)(func ** type_sig.signature())
-        return Pipeline(func, type_sig[0], type_sig[-1], func.__name__, state=type_sig.state)
+        return Pipeline(
+            func, type_sig[0], type_sig[-1], func.__name__, 
+            state=type_sig.state, partition=type_sig.partition
+        )
     return _decor
 
 
