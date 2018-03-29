@@ -139,7 +139,8 @@ def computation(type_sig):
     :param type_sig: type signature
     """
     def _decor(func):
-        func = wraps(func)(func ** type_sig.signature())
+        wraps_func = func if not isinstance(func, partial) else func.func
+        func = wraps(wraps_func)(func ** type_sig.signature())
         return Pipeline(
             func, type_sig[0], type_sig[-1], func.__name__, 
             state=type_sig.state, partition=type_sig.partition

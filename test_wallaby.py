@@ -2,6 +2,7 @@ import string
 import unittest
 import mock
 import wallaroo
+from functools import partial
 from wallaby import (
     TypeConstructor, TypeWrapper, T, 
     Source, Sink, Pipeline, computation
@@ -307,6 +308,44 @@ class TestComputation(unittest.TestCase):
         ])
         ab.to_stateful.assert_has_calls([
             mock.call(add.comp, MyState, 'add')
+        ])
+        with self.assertRaises(TypeError):
+            pipeline = add >> reverse
+    
+    def test_stateful_partitioned_partial_application(self):
+        ab = mock.Mock()
+        ab.to_state_partition = mock.Mock()
+        ab.to_stateful = mock.Mock()
+
+        class MyState(object):
+            def __init__(self):
+                self._data = []
+
+            def update(self, data):
+                self._data.append(data)
+
+        @wallaroo.partition
+        def partition(data):
+            return data.letter[0]
+        part_keys = list(string.ascii_lowercase)
+
+        @computation(T[str] >> T.State[MyState, partition, part_keys] >> T[str, bool])
+        def reverse(data, state):
+            state.update(data)
+            return data[::-1], True
+
+        def add(n, data, state):
+            state.update(data)
+            return (int(data) + n, True)
+        add_one = computation(T[str] >> T.State[MyState] >> T[int, bool])(partial(add, 1))
+
+        pipeline = reverse >> add_one
+        pipeline.init(ab)
+        ab.to_state_partition.assert_has_calls([
+            mock.call(reverse.comp, MyState, 'reverse', partition, part_keys)
+        ])
+        ab.to_stateful.assert_has_calls([
+            mock.call(add_one.comp, MyState, 'add')
         ])
         with self.assertRaises(TypeError):
             pipeline = add >> reverse
