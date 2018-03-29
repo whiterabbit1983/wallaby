@@ -29,11 +29,11 @@ class Chain(object):
         self._chain = [val]
         self._val = val
 
-    def _action(self, other_chain):
+    def _bind(self, other_chain):
         self._chain.append(other_chain._val)
 
     def __rshift__(self, w):
-        self._action(w)
+        self._bind(w)
         return self
 
 
@@ -42,10 +42,10 @@ class TypeWrapper(Chain):
         super(TypeWrapper, self).__init__(t)
         self.state = t if stateful else None
 
-    def _action(self, w):
+    def _bind(self, w):
         if self.state is None:
             self.state = w.state
-        return super(TypeWrapper, self)._action(w)
+        return super(TypeWrapper, self)._bind(w)
 
     def __getitem__(self, n):
         return self._chain[n]
@@ -73,7 +73,7 @@ class Pipeline(Chain):
         else:
             ab.to(comp)
 
-    def _action(self, p):
+    def _bind(self, p):
         in_ = p.in_type
         out = self.out_type
         if isinstance(out, tuple):
@@ -90,7 +90,7 @@ class Pipeline(Chain):
             )
         self.out_type = p.out_type
         self.comp_name = p.comp_name
-        return super(Pipeline, self)._action(p)
+        return super(Pipeline, self)._bind(p)
 
     def init(self, ab):
         """
