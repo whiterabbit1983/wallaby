@@ -1,6 +1,33 @@
 import operator
+import wallaroo
+import hask
 from functools import wraps, partial
 from hask import H
+from hask.lang.syntax import Syntax, __signature__
+from hask.lang.type_system import build_sig, make_fn_type, TypedFunc
+
+
+class sig(Syntax):
+    def __init__(self, signature):
+        super(self.__class__, self).__init__("Syntax error in type signature")
+
+        if not isinstance(signature, __signature__):
+            msg = "Signature expected in sig(); found %s" % signature
+            raise SyntaxError(msg)
+
+        elif len(signature.sig.args) < 2:
+            raise SyntaxError("Not enough type arguments in signature")
+
+        self.sig = signature.sig
+        return
+
+    def __call__(self, fn):
+        fn_args = build_sig(self.sig)
+        fn_type = make_fn_type(fn_args)
+        obj = TypedFunc(fn, fn_args, fn_type)
+        obj.__name__ = fn.__name__ if not isinstance(fn, partial) else fn.func.__name__
+        obj.__doc__ = fn.__doc__
+        return obj
 
 
 class TypeConstructor(object):
@@ -75,13 +102,15 @@ class Pipeline(Chain):
         return self.comp(*args, **kwargs)
 
     def _executor(self, comp, state, partition, ab):
+        stateless = wallaroo.computation(name=self.comp_name)
+        stateful = wallaroo.state_computation(name=self.comp_name)
         if state:
             if partition:
-                ab.to_state_partition(comp, state, comp.__name__, *partition)
+                ab.to_state_partition(stateful(comp), state, self.comp_name, *partition)
             else:
-                ab.to_stateful(comp, state, comp.__name__)
+                ab.to_stateful(stateful(comp), state, self.comp_name)
         else:
-            ab.to(comp)
+            ab.to(stateless(comp))
 
     def _bind(self, p):
         in_ = p.in_type
@@ -99,7 +128,7 @@ class Pipeline(Chain):
                 )
             )
         self.out_type = p.out_type
-        self.comp_name = p.comp_name
+        # self.comp_name = p.comp_name
         return super(Pipeline, self)._bind(p)
 
     def init(self, ab):
@@ -139,10 +168,10 @@ def computation(type_sig):
     :param type_sig: type signature
     """
     def _decor(func):
-        wraps_func = func if not isinstance(func, partial) else func.func
-        func = wraps(wraps_func)(func ** type_sig.signature())
+        comp_name = func.__name__ if not isinstance(func, partial) else func.func.__name__
+        func = (sig(type_sig.signature())(func))
         return Pipeline(
-            func, type_sig[0], type_sig[-1], func.__name__, 
+            func, type_sig[0], type_sig[-1], comp_name, 
             state=type_sig.state, partition=type_sig.partition
         )
     return _decor

@@ -163,7 +163,10 @@ class TestComputation(unittest.TestCase):
 
         pipeline = reverse >> add
         pipeline.init(ab)
-        ab.to.assert_has_calls([mock.call(reverse.comp), mock.call(add.comp)])
+        calls = ab.to.call_args_list
+        self.assertEqual(len(calls), 2)
+        self.assertIn('reverse', str(calls[0][0][0]))
+        self.assertIn('add', str(calls[1][0][0]))
         with self.assertRaises(TypeError):
             pipeline = add >> reverse
     
@@ -190,7 +193,12 @@ class TestComputation(unittest.TestCase):
 
         pipeline = reverse >> add
         pipeline.init(ab)
-        ab.to_stateful.assert_has_calls([mock.call(reverse.comp, MyState, 'reverse'), mock.call(add.comp, MyState, 'add')])
+        calls = ab.to_stateful.call_args_list
+        self.assertEqual(len(calls), 2)
+        self.assertIn('reverse', str(calls[0][0][0]))
+        self.assertEqual(calls[0][0][1:], (MyState, 'reverse'))
+        self.assertIn('add', str(calls[1][0][0]))
+        self.assertEqual(calls[1][0][1:], (MyState, 'add'))
         with self.assertRaises(TypeError):
             pipeline = add >> reverse
 
@@ -212,7 +220,10 @@ class TestComputation(unittest.TestCase):
 
         pipeline = Source(config1, 'new_pipeline') >> reverse >> add >> Sink(config2)
         pipeline.init(ab)
-        ab.to.assert_has_calls([mock.call(reverse.comp), mock.call(add.comp)])
+        calls = ab.to.call_args_list
+        self.assertEqual(len(calls), 2)
+        self.assertIn('reverse', str(calls[0][0][0]))
+        self.assertIn('add', str(calls[1][0][0]))
         ab.new_pipeline.assert_called_with('new_pipeline', config1)
         ab.to_sink.assert_called_with(config2)
         with self.assertRaises(TypeError):
@@ -239,7 +250,10 @@ class TestComputation(unittest.TestCase):
 
         pipeline = Source(config1, 'new_pipeline') >> reverse >> add >> Sink(config2)
         pipeline.init(ab)
-        ab.to.assert_has_calls([mock.call(reverse.comp), mock.call(add.comp)])
+        calls = ab.to.call_args_list
+        self.assertEqual(len(calls), 2)
+        self.assertIn('reverse', str(calls[0][0][0]))
+        self.assertIn('add', str(calls[1][0][0]))
         ab.new_pipeline.assert_called_with('new_pipeline', config1)
         ab.to_sink.assert_called_with(config2)
         with self.assertRaises(TypeError):
@@ -270,7 +284,12 @@ class TestComputation(unittest.TestCase):
 
         pipeline = reverse >> add
         pipeline.init(ab)
-        ab.to_stateful.assert_has_calls([mock.call(reverse.comp, MyState, 'reverse'), mock.call(add.comp, MyState, 'add')])
+        calls = ab.to_stateful.call_args_list
+        self.assertEqual(len(calls), 2)
+        self.assertIn('reverse', str(calls[0][0][0]))
+        self.assertIn('add', str(calls[1][0][0]))
+        self.assertEqual(calls[0][0][1:], (MyState, 'reverse'))
+        self.assertEqual(calls[1][0][1:], (MyState, 'add'))
         with self.assertRaises(TypeError):
             pipeline = add >> reverse
 
@@ -303,12 +322,14 @@ class TestComputation(unittest.TestCase):
 
         pipeline = reverse >> add
         pipeline.init(ab)
-        ab.to_state_partition.assert_has_calls([
-            mock.call(reverse.comp, MyState, 'reverse', partition, part_keys)
-        ])
-        ab.to_stateful.assert_has_calls([
-            mock.call(add.comp, MyState, 'add')
-        ])
+        calls = ab.to_stateful.call_args_list
+        self.assertEqual(len(calls), 1)
+        self.assertIn('add', str(calls[0][0][0]))
+        self.assertEqual(calls[0][0][1:], (MyState, 'add'))
+        calls = ab.to_state_partition.call_args_list
+        self.assertEqual(len(calls), 1)
+        self.assertIn('reverse', str(calls[0][0][0]))
+        self.assertEqual(calls[0][0][1:], (MyState, 'reverse', partition, part_keys))
         with self.assertRaises(TypeError):
             pipeline = add >> reverse
     
@@ -341,12 +362,14 @@ class TestComputation(unittest.TestCase):
 
         pipeline = reverse >> add_one
         pipeline.init(ab)
-        ab.to_state_partition.assert_has_calls([
-            mock.call(reverse.comp, MyState, 'reverse', partition, part_keys)
-        ])
-        ab.to_stateful.assert_has_calls([
-            mock.call(add_one.comp, MyState, 'add')
-        ])
+        calls = ab.to_stateful.call_args_list
+        self.assertEqual(len(calls), 1)
+        self.assertIn('add', str(calls[0][0][0]))
+        self.assertEqual(calls[0][0][1:], (MyState, 'add'))
+        calls = ab.to_state_partition.call_args_list
+        self.assertEqual(len(calls), 1)
+        self.assertIn('reverse', str(calls[0][0][0]))
+        self.assertEqual(calls[0][0][1:], (MyState, 'reverse', partition, part_keys))
         with self.assertRaises(TypeError):
             pipeline = add >> reverse
 
