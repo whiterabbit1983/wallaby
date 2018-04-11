@@ -111,7 +111,7 @@ def application_setup(args):
 
     # Setup wallaroo application
     source_config = wallaroo.TCPSourceConfig(in_host, in_port, decoder)
-    sink_config = wallaroo.TCPSinkConfig(out_host, out_port, encoder))
+    sink_config = wallaroo.TCPSinkConfig(out_host, out_port, encoder)
 
     reverse_pipeline = Source(source_config, 'reversed pipeline') >> reverse >> Sink(sink_config)
     reverse_pipeline.init( ab )
@@ -136,7 +136,7 @@ def application_setup(args):
     out_host, out_port = wallaroo.tcp_parse_output_addrs(args)[0]
 
     source_config = wallaroo.TCPSourceConfig(in_host, in_port, decoder)
-    sink_config = wallaroo.TCPSinkConfig(out_host, out_port, encoder))
+    sink_config = wallaroo.TCPSinkConfig(out_host, out_port, encoder)
     ab = wallaroo.ApplicationBuilder("alphabet")
     alphabet_pipeline = Source(source_config, "alphabet") >> add_votes >> Sink(sink_config)
     alphabet_pipeline.init(ab)
@@ -201,7 +201,7 @@ def application_setup(args):
     out_host, out_port = wallaroo.tcp_parse_output_addrs(args)[0]
 
     source_config = wallaroo.TCPSourceConfig(in_host, in_port, decoder)
-    sink_config = wallaroo.TCPSinkConfig(out_host, out_port, encoder))
+    sink_config = wallaroo.TCPSinkConfig(out_host, out_port, encoder)
     ab = wallaroo.ApplicationBuilder("alphabet")
     alphabet_pipeline = Source(source_config, "alphabet") >> add_votes >> Sink(sink_config)
     alphabet_pipeline.init(ab)
