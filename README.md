@@ -137,6 +137,7 @@ def application_setup(args):
 
     source_config = wallaroo.TCPSourceConfig(in_host, in_port, decoder)
     sink_config = wallaroo.TCPSinkConfig(out_host, out_port, encoder)
+    sink_config = wallaroo.TCPSinkConfig(out_host, out_port, encoder))
     ab = wallaroo.ApplicationBuilder("alphabet")
     alphabet_pipeline = Source(source_config, "alphabet") >> add_votes >> Sink(sink_config)
     alphabet_pipeline.init(ab)

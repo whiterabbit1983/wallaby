@@ -1,7 +1,7 @@
 import operator
 import wallaroo
 import hask
-from functools import wraps, partial
+from functools import partial
 from hask import H
 from hask.lang.syntax import Syntax, __signature__
 from hask.lang.type_system import build_sig, make_fn_type, TypedFunc
@@ -128,7 +128,6 @@ class Pipeline(Chain):
                 )
             )
         self.out_type = p.out_type
-        # self.comp_name = p.comp_name
         return super(Pipeline, self)._bind(p)
 
     def init(self, ab):
